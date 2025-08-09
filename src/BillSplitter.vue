@@ -102,7 +102,7 @@
     <h3 style="text-align: center;">Subtotal: ${{ subtotal.toFixed(2) }}</h3>
 
     <div class="input-section">
-      <label for="total-input">Total (with tip & tax):</label>
+      <label for="total-input">Total (with tip & tax): </label>
       <input type="tel" id="total-input" :value="totalAmount" @input="formatTotal" placeholder="0.00" @keydown.enter="showSummary = true" />
     </div>
 
@@ -245,7 +245,7 @@ function removeItem(itemId) {
  * Formats a number input to two decimal places automatically.
  */
 function formatPrice(item, event) {
-  let value = event.target.value.replace(/[^0-9]/g, '');
+  const value = event.target.value.replace(/[^0-9]/g, '');
   item.price = value ? (parseInt(value, 10) / 100).toFixed(2) : '';
 }
 
@@ -253,7 +253,7 @@ function formatPrice(item, event) {
  * Formatter for the main Total field.
  */
 function formatTotal(event) {
-  let value = event.target.value.replace(/[^0-9]/g, '');
+  const value = event.target.value.replace(/[^0-9]/g, '');
   totalAmount.value = value ? (parseInt(value, 10) / 100).toFixed(2) : '';
 }
 
@@ -369,6 +369,9 @@ onMounted(() => {
   --border-color: #ddd;
   --button-bg: #007bff;
   --button-hover-bg: #0056b3;
+}
+input {
+  font-size: 16px;
 }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
