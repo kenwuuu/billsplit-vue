@@ -43,7 +43,7 @@
       <div v-if="uploadError" class="error-text">{{ uploadError }}</div>
       <div v-if="isUploading">Processing receipt... 🤖</div>
       <label v-else class="upload-label">
-        <input type="file" @change="handleReceiptUpload" accept="image/*" capture="environment" style="display: none;" />
+        <input type="file" @change="handleReceiptUpload" accept="image/*" style="display: none;" />
         📤 Upload Receipt
       </label>
     </div>
