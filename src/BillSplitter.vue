@@ -38,7 +38,7 @@
         <button type="submit" style="display: none;">Add Item</button>
       </form>
 
-      <button @click="showManualItemInput = !showManualItemInput" class="secondary-action-btn mr-4">Manually add items</button>
+      <button @click="showManualItemInput = !showManualItemInput" class="secondary-action-btn mr-4 mb-4 sm:mb-0">Manually add items</button>
 
       <div v-if="uploadError" class="error-text">{{ uploadError }}</div>
       <div v-if="isUploading">Processing receipt... 🤖</div>
@@ -67,7 +67,9 @@
                 </span>
           </div>
         </th>
-        <th>🗑</th>
+        <th>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="m9.4 16.5l2.6-2.6l2.6 2.6l1.4-1.4l-2.6-2.6L16 9.9l-1.4-1.4l-2.6 2.6l-2.6-2.6L8 9.9l2.6 2.6L8 15.1zM5 21V6H4V4h5V3h6v1h5v2h-1v15z"/></svg>
+        </th>
       </tr>
       </thead>
       <tbody>
@@ -106,7 +108,7 @@
       <input type="tel" id="total-input" :value="totalAmount" @input="formatTotal" placeholder="0.00" @keydown.enter="showSummary = true" />
     </div>
 
-    <button @click="showSummary = true" :disabled="persons.length === 0">Calculate Split</button>
+    <button @click="showSummary = true" class="calculate-split-btn" :disabled="persons.length === 0">Calculate Split</button>
 
     <div v-if="showSummary" class="payment-summary-section">
       <h2>Payment Summary</h2>
@@ -511,6 +513,7 @@ button:disabled { background-color: #aaa; cursor: not-allowed; }
 .secondary-action-btn:hover { background: #5a6268; }
 .add-item-btn { display: block; margin: 10px auto 20px; background-color: #28a745; }
 .add-item-btn:hover { background-color: #218838; }
+.calculate-split-btn { display: block; margin: 10px auto 20px; }
 
 .person-checkboxes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; padding: 10px; border-radius: 5px; background: #f8f9fa; }
 .person-tag { background: #e9ecef; padding: 5px 10px; border-radius: 15px; font-size: 0.9em; }
