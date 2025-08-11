@@ -102,6 +102,7 @@
     <button @click="addItemRow()" class="add-item-btn">+ Add Item Row</button>
 
     <h3 style="text-align: center;">Subtotal: ${{ subtotal.toFixed(2) }}</h3>
+    <h3 style="text-align: center;">Items: {{ billItems.length }}</h3>
 
     <div class="input-section">
       <label for="total-input">Total (with tip & tax): </label>
