@@ -2,7 +2,7 @@
   <div class="bill-splitter-app">
     <div v-if="showTipPopup" id="overlay" @click="closePopup"></div>
     <div v-if="showTipPopup" id="popup">
-      <h3><b>Tip! 💡</b></h3>
+      <h3><b>Save some time. 💡</b></h3>
       <p>If no one is selected in the <b>Split With</b> column, the item will be split with everyone.</p>
       <label>
         <input type="checkbox" v-model="dontShowAgain" /> Don't show this again
@@ -11,7 +11,6 @@
     </div>
 
     <h1>Bill Splitting Utility</h1>
-    <h4><a href="http://kenwuuu.github.io/">Tools</a> by: <a href="https://github.com/kenwuuu/" target="_blank">Ken</a></h4>
 
     <div class="input-section">
       <form autocomplete="off" @submit.prevent="addPerson">
