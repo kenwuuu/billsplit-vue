@@ -1,145 +1,221 @@
 <template>
   <div class="bill-splitter-app">
-    <div v-if="showTipPopup" id="overlay" @click="closePopup"></div>
-    <div v-if="showTipPopup" id="popup">
-      <h3><b>Save some time. 💡</b></h3>
-      <p>If no one is selected in the <b>Split With</b> column, the item will be split with everyone.</p>
-      <label>
-        <input type="checkbox" v-model="dontShowAgain" /> Don't show this again
-      </label>
-      <button @click="closePopup">Close</button>
+<!-- Popup Tip Modal-->
+    <div v-if="showTipPopup" class="modal modal-open">
+      <div class="modal-box">
+        <h3 class="font-bold text-lg">Save some time 💡</h3>
+        <p class="py-4">If no one is selected in the <b>Split With</b> column, the item will be split with everyone.</p>
+        <div class="modal-action flex justify-between items-center">
+          <label class="label cursor-pointer">
+            <input type="checkbox" v-model="dontShowAgain" class="checkbox" />
+            <span class="label-text ml-2">Don't show this again</span>
+          </label>
+          <button @click="closePopup" class="btn btn-primary">Close</button>
+        </div>
+      </div>
     </div>
 
-    <h1>Bill Splitting Utility</h1>
+<!-- Title -->
+    <h1 class="text-3xl font-bold text-center mb-6">Bill Splitting Utility</h1>
 
-    <div class="input-section">
-      <form autocomplete="off" @submit.prevent="addPerson">
-        <input
-          type="text"
-          v-model="newPersonName"
-          placeholder="Person name to split with"
-          class="wide-input"
-          autocomplete="off"
-        />
-        <button type="submit" style="display: none;">Add Person</button>
-      </form>
+<!-- Scan Receipt - Section Header -->
+    <div class="mb-4">
+      <span class="text-3xl">Scan Receipt</span>
     </div>
 
-    <div class="input-section">
-      <form v-if="showManualItemInput" autocomplete="off" @submit.prevent="addMenuItem">
-        <input
-          type="text"
-          v-model="newMenuItemName"
-          placeholder="Item name"
-          class="wide-input mb-4"
-          autocomplete="off"
-        />
-        <button type="submit" style="display: none;">Add Item</button>
-      </form>
+    <div class="bg-base-200 rounded-xl py-4 mb-6">
+      <!-- Item input field -->
+      <div class="mb-4 flex justify-center">
+        <form v-if="showManualItemInput" autocomplete="off" @submit.prevent="addMenuItem" class="w-auto">
+          <input
+            type="text"
+            v-model="newMenuItemName"
+            placeholder="Item name"
+            class="input"
+            autocomplete="off"
+          />
+          <button type="submit" style="display: none;">Add Item</button>
+        </form>
+      </div>
 
-      <button @click="showManualItemInput = !showManualItemInput" class="secondary-action-btn mr-4 mb-4 sm:mb-0">Manually add items</button>
+      <div class="flex justify-center items-center gap-4 mb-4">
+        <!-- Manual input button -->
+        <button @click="showManualItemInput = !showManualItemInput" class="btn btn-outline">Manually add items</button>
+        <div v-if="uploadError" class="text-error">{{ uploadError }}</div>
+        <div v-if="isUploading">Processing receipt... 🤖</div>
 
-      <div v-if="uploadError" class="error-text">{{ uploadError }}</div>
-      <div v-if="isUploading">Processing receipt... 🤖</div>
-      <label v-else class="upload-label">
-        <input type="file" @change="handleReceiptUpload" accept="image/*" style="display: none;" />
-        📤 Upload Receipt
-      </label>
+        <!-- Upload receipt button -->
+        <label v-else class="btn btn-accent">
+          <input type="file" @change="handleReceiptUpload" accept="image/*" class="hidden" />
+          📤 Upload Receipt
+        </label>
+      </div>
+
+      <!-- Progress bar cluster -->
+      <div class="flex flex-col gap-4 justify-center items-center">
+        <!-- Progress bar -->
+        <div >
+          <progress @click="animateProgressBar" ref="progressBar"  class="progress progress-success w-56" value="0" max="100"></progress>
+        </div>
+        <!-- Start and finish buttons -->
+        <div class="flex gap-4" v-if="inDevMode">
+          <button @click="startProgressBarAnimation" class="btn">Start</button>
+          <button @click="finishProgressBarAnimation" class="btn btn-primary">Finish</button>
+        </div>
+      </div>
     </div>
 
-    <div id="person-list" class="person-checkboxes">
-      <span v-if="persons.length === 0">No people added yet.</span>
+<!-- Add People - Section Header -->
+    <div class="mb-4" id="add-people-section">
+      <span class="text-3xl">Add People</span>
+    </div>
+
+    <div class="bg-base-200 rounded-xl py-4 mb-6">
+      <!-- Name input -->
+      <div class="flex justify-center gap-4 mb-4">
+        <form autocomplete="off" @submit.prevent="handleAddPerson" class="w-auto">
+          <input
+            type="text"
+            v-model="newPersonName"
+            placeholder="Add name to split with"
+            id="person-input"
+            class="input w-full"
+            autocomplete="off"
+          />
+          <button type="submit" style="display: none;">Add Person</button>
+        </form>
+      </div>
+
+      <!-- Person list -->
+      <div id="person-list" class="flex flex-wrap gap-2 justify-center">
+      <span v-if="persons.length === 0" class="label-text">No people added yet.</span>
       <strong v-else>Guests:</strong>
-      <span v-for="person in persons" :key="person" class="person-tag">{{ person }}</span>
+      <div
+        v-for="person in persons"
+        :key="person"
+        class="badge badge-lg badge-outline"
+      >
+        {{ person }}
+      </div>
+    </div>
     </div>
 
-    <table>
-      <thead>
-      <tr>
-        <th>Item & Price</th>
-        <th class="split-with-cell">
-          Split With
-          <div class="tooltip-container">
-            <button @click="showSplitTooltip = !showSplitTooltip" class="tooltip-trigger">?⃝</button>
-            <span v-if="showSplitTooltip" class="tooltip-text">
-                    Check names to split an item. If no one is checked, it's split with everyone.
-                </span>
-          </div>
-        </th>
-        <th>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="m9.4 16.5l2.6-2.6l2.6 2.6l1.4-1.4l-2.6-2.6L16 9.9l-1.4-1.4l-2.6 2.6l-2.6-2.6L8 9.9l2.6 2.6L8 15.1zM5 21V6H4V4h5V3h6v1h5v2h-1v15z"/></svg>
-        </th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-if="billItems.length === 0">
-        <td colspan="3" style="text-align: center;">Add items to get started!</td>
-      </tr>
-      <tr v-for="item in billItems" :key="item.id">
-        <td>
-          <div class="item-price-wrapper">
-            <input type="text" v-model="item.name" placeholder="Item Name" class="item-name-input"/>
-            <div class="price-input-wrapper">
-              <span class="price-prefix"></span>
-              <input type="tel" :value="item.price" @input="event => formatPrice(item, event)" placeholder="0.00" class="price-input"/>
+<!-- Split Bill - Section Header -->
+    <div class="mb-4">
+      <span class="text-3xl">Split</span>
+    </div>
+
+    <div v-if="billItems.length === 0" class="text-center italic label-text">Upload a receipt to get started!</div>
+    <div v-else>
+      <div class="flex flex-col gap-4">
+        <div v-for="item in billItems" :key="item.id" class="card card-bordered bg-base-200">
+          <div class="card-body p-4 relative">
+            <div class="flex flex-col gap-2">
+              <div class="flex flex-nowrap gap-2 w-full items-center">
+                <input type="text" v-model="item.name" data-testid="item-name" placeholder="Item" class="input"/>
+                <input type="tel" :value="item.price" @input="event => formatPrice(item, event)" placeholder="0.00" class="input w-1/3 mr-8" />
+              </div>
+              <div class="mt-2">
+                <div class="flex flex-wrap gap-1">
+                  <button
+                    v-for="person in persons"
+                    :key="person"
+                    @click="togglePersonForItem(item, person)"
+                    :class="item.splitWith.includes(person) ? 'btn-outline' : 'btn-soft'"
+                    class="btn btn-sm"
+                    :title="person"
+                  >
+                    {{ person }}
+                  </button>
+                </div>
+              </div>
             </div>
+            <button @click="removeItem(item.id)" class="btn btn-sm btn-ghost btn-circle absolute top-2 right-2" title="Remove row">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
           </div>
-        </td>
-        <td class="split-with-cell">
-          <div class="split-checkboxes-wrapper">
-            <label v-for="person in persons" :key="person" :title="person">
-              <input type="checkbox" :value="person" v-model="item.splitWith" /> {{ person }}
-            </label>
-          </div>
-        </td>
-        <td class="action-col">
-          <button @click="removeItem(item.id)" class="remove-btn" title="Remove row">❌</button>
-        </td>
-      </tr>
-      </tbody>
-    </table>
-    <button @click="addItemRow()" class="add-item-btn">+ Add Item Row</button>
+        </div>
+      </div>
+    </div>
+    <button @click="addItemRow()" class="btn btn-accent w-full mt-4">+ Add Item Row</button>
 
-    <h3 style="text-align: center;">Subtotal: ${{ subtotal.toFixed(2) }}</h3>
-    <h3 style="text-align: center;">Items: {{ billItems.length }}</h3>
 
-    <div class="input-section">
-      <label for="total-input">Total (with tip & tax): </label>
-      <input type="tel" id="total-input" :value="totalAmount" @input="formatTotal" placeholder="0.00" @keydown.enter="showSummary = true" />
+<!-- Split Bill - Section Header -->
+<div class="flex mb-4 mt-6">
+  <p class="text-3xl mr-6">Summary</p>
+</div>
+
+<!-- Subtotal and Total section -->
+    <div class="text-center my-4">
+      <h3 class="text-xl font-semibold">Subtotal: ${{ subtotal.toFixed(2) }}</h3>
+      <h3 class="text-xl font-semibold">Items: {{ billItems.length }}</h3>
     </div>
 
-    <button @click="showSummary = true" class="calculate-split-btn" :disabled="persons.length === 0">Calculate Split</button>
-
-    <div v-if="showSummary" class="payment-summary-section">
-      <h2>Payment Summary</h2>
-      <h4>"Total Payment" includes each person's share of tip and tax.</h4>
-      <table>
-        <thead>
-        <tr>
-          <th>Person</th>
-          <th>Total Payment</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="(amount, person) in finalTotals" :key="person">
-          <td>{{ person }}</td>
-          <td>${{ amount }}</td>
-        </tr>
-        </tbody>
-      </table>
+    <div class="form-control text-center">
+      <span class=" mb-4">Total, after tip & tax:</span>
+      <input type="tel" class="input base-content" :value="totalAmount" @input="formatTotal" placeholder="0.00" @keydown.enter="showSummary = true" />
     </div>
+
+    <button @click="calculateSplit" class="btn btn-primary btn-block my-4" :disabled="persons.length === 0">Calculate Split</button>
+
+    <div v-if="showSummary" class="mt-8 pt-4 border-t border-gray-300">
+      <h2 class="text-2xl font-bold text-center">Payment Summary</h2>
+      <h4 class="text-center mb-4">"Total Payment" includes each person's share of tip and tax.</h4>
+      <div class="overflow-x-auto">
+        <table class="table w-4/5 mx-auto">
+          <thead>
+          <tr>
+            <th>Person</th>
+            <th>Total Payment</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="(amount, person) in finalTotals" :key="person">
+            <td class="font-medium">{{ person }}</td>
+            <td>${{ amount }}</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+<!--  Start details section. We're adding this later  -->
+<!--    <div v-if="showSummary" class="mt-8 pt-4 border-t border-gray-300">-->
+<!--      <h2 class="text-2xl font-bold text-center">Payment Summary</h2>-->
+<!--      <h4 class="text-center mb-4">"Total Payment" includes each person's share of tip and tax.</h4>-->
+
+<!--      <div class="space-y-6">-->
+<!--        <div v-for="person in persons" :key="person" class="card card-bordered bg-base-200">-->
+<!--          <div class="card-body">-->
+<!--            <h3 class="text-xl font-semibold mb-2">{{ person }}</h3>-->
+<!--            <ul class="list-disc list-inside mb-2">-->
+<!--              <li v-for="entry in personBreakdown[person]" :key="entry.item">-->
+<!--                {{ entry.item }} — ${{ entry.share }}-->
+<!--              </li>-->
+<!--            </ul>-->
+<!--            <p class="font-bold text-right">Total: ${{ finalTotals[person] }}</p>-->
+<!--          </div>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  end details section  -->
   </div>
 </template>
 
 ***
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import './app.css';
+import { gsap } from "gsap"
 
 // --- STATE ---
+const inDevMode = ref(import.meta.env.DEV);
+
 const persons = ref([]);
 const newPersonName = ref('');
+
+const progressBar = ref(null)
+let timeline = null
 
 const billItems = ref([]);
 const newMenuItemName = ref('');
@@ -150,7 +226,6 @@ const showSummary = ref(false);
 
 const showTipPopup = ref(false);
 const dontShowAgain = ref(false);
-const showSplitTooltip = ref(false);
 
 const uploadError = ref('');
 const isUploading = ref(false);
@@ -197,12 +272,85 @@ const finalTotals = computed(() => {
   return final;
 });
 
+/**
+ * Builds an itemized breakdown for each person.
+ */
+const personBreakdown = computed(() => {
+  const breakdown = {};
+  const sub = subtotal.value;
+  const total = parseFloat(totalAmount.value) || sub;
+  if (sub === 0 || persons.value.length === 0) return breakdown;
+
+  const multiplier = total / sub; // tax/tip multiplier
+
+  persons.value.forEach(p => { breakdown[p] = []; });
+
+  billItems.value.forEach(item => {
+    const price = parseFloat(item.price) || 0;
+    if (!price) return;
+
+    const sharers = item.splitWith.length > 0 ? item.splitWith : persons.value;
+    const share = (price / sharers.length) * multiplier;
+
+    sharers.forEach(p => {
+      breakdown[p].push({
+        item: item.name || "Unnamed Item",
+        share: share.toFixed(2)
+      });
+    });
+  });
+
+  return breakdown;
+});
+
 // --- METHODS ---
+function startProgressBarAnimation() {
+  // Kill old animation if running
+  if (timeline) {
+    timeline.kill()
+    progressBar.value.value = 0
+  }
+
+  timeline = gsap.timeline()
+
+  // Phase 1: 0 → 80% in 9s
+  timeline.to(progressBar.value, {
+    value: 95,
+    duration: 20,
+    ease: "power2.out"
+  })
+}
+
+function finishProgressBarAnimation() {
+  // if no timeline, return. else, kill it
+  if (!timeline) return
+  timeline.kill()
+
+  // Jump to end of current tween and animate quickly to 100%
+  gsap.to(progressBar.value, {
+    value: 100,
+    duration: 0.2,
+    ease: "linear",
+  })
+
+  focusPeopleInput();
+}
+
+function focusPeopleInput() {
+  // scroll Add People section to top of page
+  document.querySelector('#add-people-section').scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'   // align the element to the top of the viewport
+  });
+
+  // focus input field
+  document.getElementById('person-input').focus()
+}
 
 /**
- * Adds multiple people from a single space-separated string.
+ * Adds one or multiple people from a single space-separated string.
  */
-function addPerson() {
+function handleAddPerson() {
   const names = newPersonName.value.trim().split(/\s+/).filter(Boolean);
   names.forEach(name => {
     if (!persons.value.includes(name)) {
@@ -210,6 +358,36 @@ function addPerson() {
     }
   });
   newPersonName.value = '';
+}
+
+async function calculateSplit() {
+  showSummary.value = true;
+  await nextTick();
+  window.scrollTo({
+    top: document.documentElement.scrollHeight,
+    behavior: 'smooth'
+  });
+}
+
+function togglePersonForItem(item, person) {
+  const index = item.splitWith.indexOf(person);
+  if (index > -1) {
+    // Person is in the array, so remove them
+    item.splitWith.splice(index, 1);
+  } else {
+    // Person is not in the array, so add them
+    item.splitWith.push(person);
+  }
+
+  handleShouldShowTip(item)
+}
+
+function handleShouldShowTip(item) {
+  console.log('hi')
+  if (item.splitWith.length === persons.value.length) {
+    console.log('should show')
+    showPopup();
+  }
 }
 
 /**
@@ -274,8 +452,11 @@ function closePopup() {
  * Handles the file upload, compression, and API call for receipt parsing.
  */
 async function handleReceiptUpload(event) {
+  // get file
   const file = event.target.files[0];
   if (!file) return;
+
+  startProgressBarAnimation();
 
   uploadError.value = '';
   isUploading.value = true;
@@ -294,8 +475,12 @@ async function handleReceiptUpload(event) {
       body: formData
     });
 
+    // if response not ok, throw errow
     if (!response.ok) throw new Error('Failed to parse receipt. Please try again.');
+
+    // wait on data and then finish progress bar
     const data = await response.json();
+    finishProgressBarAnimation();
 
     // Clear existing items and populate with parsed data
     billItems.value = [];
@@ -333,6 +518,9 @@ function compressImage(file, quality = 0.8) {
   });
 }
 
+function showPopup() {
+  showTipPopup.value = true;
+}
 
 // --- WATCHERS (Reacting to State Changes) ---
 
@@ -365,176 +553,14 @@ onMounted(() => {
 ***
 
 <style>
-/* You can place the contents of your styles.css file here. Scoped styles are also possible. */
-:root {
-  --primary-bg: #f4f4f9;
-  --text-color: #333;
-  --border-color: #ddd;
-  --button-bg: #007bff;
-  --button-hover-bg: #0056b3;
-}
-input {
-  font-size: 16px;
-}
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--primary-bg);
-  color: var(--text-color);
-  margin: 0;
-  padding: 10px;
+  padding: 4px;
 }
 .bill-splitter-app {
   max-width: 800px;
   margin: auto;
-  background: white;
-  padding: 25px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-h1, h2, h3, h4 {
-  text-align: center;
-  color: var(--header-color);
-}
-h4 {
-  font-weight: normal;
-  color: #666;
-}
-h4 a {
-  color: #007bff;
-  text-decoration: none;
-}
-h4 a:hover {
-  text-decoration: underline;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-th, td {
-  border: 1px solid var(--border-color);
-  padding: 12px;
-  text-align: left;
-  vertical-align: top;
-}
-th { background-color: #f8f9fa; }
-
-/* Combined Item & Price Input Styles */
-.item-price-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.item-name-input, .price-input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
+  padding: 6px;
   border-radius: 4px;
-  box-sizing: border-box;
-}
-
-/* Responsive "Split With" column */
-.split-with-cell { width: 45%; }
-.split-checkboxes-wrapper {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-}
-.split-checkboxes-wrapper label {
-  cursor: pointer;
-  white-space: nowrap;
-  font-size: 0.9em;
-}
-
-/* Compact Remove Button */
-.action-col { width: 40px; text-align: center; vertical-align: middle; }
-.remove-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2em;
-  padding: 0;
-  line-height: 1;
-}
-
-/* Tooltip */
-.tooltip-container {
-  display: inline-block;
-  position: relative;
-  margin-left: 4px;
-}
-.tooltip-trigger {
-  background: #e9ecef;
-  border: 1px solid #ced4da;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  padding: 0;
-  line-height: 20px;
-  font-size: 12px;
-}
-.tooltip-text {
-  visibility: visible;
-  width: 200px;
-  background-color: #333;
-  color: #fff;
-  text-align: center;
-  border-radius: 6px;
-  padding: 8px;
-  position: absolute;
-  z-index: 1;
-  bottom: 125%;
-  left: 50%;
-  margin-left: -100px;
-  opacity: 1;
-  transition: opacity 0.3s;
-}
-.tooltip-text::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: #333 transparent transparent transparent;
-}
-
-/* General Input & Button Styles */
-.input-section { text-align: center; margin-bottom: 20px; }
-#total-input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-.wide-input { padding: 10px; width: 70%; max-width: 400px; border: 1px solid #ccc; border-radius: 4px; }
-button, .upload-label { background-color: var(--button-bg); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s; display: inline-block; }
-button:hover, .upload-label:hover { background-color: var(--button-hover-bg); }
-button:disabled { background-color: #aaa; cursor: not-allowed; }
-.secondary-action-btn { background: #6c757d; margin-left: 10px; }
-.secondary-action-btn:hover { background: #5a6268; }
-.add-item-btn { display: block; margin: 10px auto 20px; background-color: #28a745; }
-.add-item-btn:hover { background-color: #218838; }
-.calculate-split-btn { display: block; margin: 10px auto 20px; }
-
-.person-checkboxes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; padding: 10px; border-radius: 5px; background: #f8f9fa; }
-.person-tag { background: #e9ecef; padding: 5px 10px; border-radius: 15px; font-size: 0.9em; }
-.payment-summary-section { margin-top: 30px; padding-top: 20px; border-top: 2px solid var(--border-color); }
-.payment-summary-section table { width: 80%; margin: 0 auto; }
-.error-text { color: red; margin-bottom: 10px; }
-
-/* Popup Styles */
-#overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 999; }
-#popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 320px; border: 1px solid black; padding: 25px; background: white; text-align: center; z-index: 1000; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-#popup p { margin: 15px 0; }
-#popup label { display: block; margin-bottom: 15px; }
-#popup button { width: 100%; }
-
-/* Mobile Responsive Adjustments */
-@media (max-width: 768px) {
-  .bill-splitter-app { padding: 10px; }
-  .split-with-cell { width: 50%; min-width: 140px; }
-  .split-checkboxes-wrapper label { font-size: 0.85em; }
-  td { padding: 8px 4px; }
-  .payment-summary-section table { width: 100%; }
 }
 </style>
