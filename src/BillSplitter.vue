@@ -135,6 +135,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import './app.css';
 
 // --- STATE ---
 const persons = ref([]);
