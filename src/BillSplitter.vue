@@ -16,7 +16,7 @@
     </div>
 
 <!-- Title -->
-    <h1 class="text-3xl font-bold text-center mb-6">Bill Splitting Utility</h1>
+    <h1 class="text-3xl font-bold text-center mb-6">SplitBetter</h1>
 
 <!-- Scan Receipt - Section Header -->
     <div class="mb-4">
