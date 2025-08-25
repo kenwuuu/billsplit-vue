@@ -112,6 +112,7 @@
           <div class="card-body p-4 relative">
             <div class="flex flex-col gap-2">
               <div class="flex flex-nowrap gap-2 w-full items-center">
+                <input type="tel" v-model="item.quantity" data-testid="item-quantity" placeholder="#" class="input w-1/8"/>
                 <input type="text" v-model="item.name" data-testid="item-name" placeholder="Item" class="input"/>
                 <input type="tel" :value="item.price" @input="event => formatPrice(item, event)" placeholder="0.00" class="input w-1/3 mr-8" />
               </div>
@@ -393,9 +394,10 @@ function handleShouldShowTip(item) {
 /**
  * Adds a new, empty row to the bill items table.
  */
-function addItemRow(name = '', price = '') {
+function addItemRow(quantity, name = '', price = '') {
   billItems.value.push({
     id: nextItemId++,
+    quantity,
     name,
     price: price.toString(),
     splitWith: [] // This array will be populated by the checkboxes via v-model
@@ -484,7 +486,7 @@ async function handleReceiptUpload(event) {
 
     // Clear existing items and populate with parsed data
     billItems.value = [];
-    data.line_items.forEach(item => addItemRow(item.name, item.price.toFixed(2)));
+    data.line_items.forEach(item => addItemRow(item.quantity, item.name, item.price.toFixed(2)));
     if (data.total_amount) totalAmount.value = data.total_amount.toFixed(2);
   } catch (err) {
     uploadError.value = err.message;
