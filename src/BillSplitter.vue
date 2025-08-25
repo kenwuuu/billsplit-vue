@@ -65,9 +65,9 @@
       </div>
     </div>
 
-<!-- Add People - Section Header -->
+<!-- People - Section Header -->
     <div class="mb-4" id="add-people-section">
-      <span class="text-3xl">Add People</span>
+      <span class="text-3xl">People</span>
     </div>
 
     <div class="bg-base-200 rounded-xl py-4 mb-6">
@@ -100,9 +100,9 @@
     </div>
     </div>
 
-<!-- Split Bill - Section Header -->
+<!-- Items - Section Header -->
     <div class="mb-4">
-      <span class="text-3xl">Split</span>
+      <span class="text-3xl">Items</span>
     </div>
 
     <div v-if="billItems.length === 0" class="text-center italic label-text">Upload a receipt to get started!</div>
