@@ -116,20 +116,19 @@
                 <input type="text" v-model="item.name" data-testid="item-name" placeholder="Item" class="input"/>
                 <input type="tel" :value="item.price" @input="event => formatPrice(item, event)" placeholder="0.00" class="input w-1/3 mr-8" />
               </div>
-              <div class="mt-2">
-                <div class="flex flex-wrap gap-1">
-                  <button
-                    v-for="person in persons"
-                    :key="person"
-                    @click="togglePersonForItem(item, person)"
-                    :class="item.splitWith.includes(person) ? 'btn-outline' : 'btn-soft'"
-                    class="btn btn-sm"
-                    :title="person"
-                  >
-                    {{ person }}
-                  </button>
-                </div>
+              <div class="flex flex-wrap mt-2 gap-1">
+                <button
+                  v-for="person in persons"
+                  :key="person"
+                  @click="togglePersonForItem(item, person)"
+                  :class="item.splitWith.includes(person) ? 'btn-outline' : 'btn-soft'"
+                  class="btn btn-sm"
+                  :title="person"
+                >
+                  {{ person }}
+                </button>
               </div>
+              <button class="btn btn-accent" v-if="item.quantity > 1" @click="divideItem(item.id)">Divide item</button>
             </div>
             <button @click="removeItem(item.id)" class="btn btn-sm btn-ghost btn-circle absolute top-2 right-2" title="Remove row">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -205,7 +204,7 @@
 ***
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick, toRaw } from 'vue'
 import './app.css';
 import { gsap } from "gsap"
 
@@ -230,7 +229,6 @@ const dontShowAgain = ref(false);
 
 const uploadError = ref('');
 const isUploading = ref(false);
-let nextItemId = 0;
 
 // --- COMPUTED PROPERTIES (Derived State) ---
 const subtotal = computed(() => {
@@ -394,9 +392,9 @@ function handleShouldShowTip(item) {
 /**
  * Adds a new, empty row to the bill items table.
  */
-function addItemRow(quantity, name = '', price = '') {
+function addItemRow(name = '', quantity = '', price = '') {
   billItems.value.push({
-    id: nextItemId++,
+    id: crypto.randomUUID(),
     quantity,
     name,
     price: price.toString(),
@@ -422,6 +420,31 @@ function addMenuItem() {
  */
 function removeItem(itemId) {
   billItems.value = billItems.value.filter(item => item.id !== itemId);
+}
+
+/**
+ * Divides an item with quantity 2+ into single items. For when I eat 2 burgers and friend eats 1,
+ * but receipt combines into 3 burgers.
+ */
+function divideItem(itemId) {
+  // get index of item using itemId
+  const itemIndex = billItems.value.findIndex(item => item.id === itemId);
+
+  // split item into array of that many items. deep copy to avoid references
+  const dividedItems = []
+  const item = toRaw(billItems.value[itemIndex]);  // toRaw turns Vue objects into raw JS objects
+  const numOfIndividualItems = item.quantity;
+
+  for (let count = 0; count < numOfIndividualItems; count++) {
+    const deepCopy = structuredClone(item)
+    deepCopy.quantity = "1";
+    deepCopy.id = crypto.randomUUID();
+
+    dividedItems.push(deepCopy)
+  }
+
+  // combine divided items and original items
+  billItems.value.splice(itemIndex, 1, ...dividedItems);
 }
 
 /**
@@ -486,7 +509,7 @@ async function handleReceiptUpload(event) {
 
     // Clear existing items and populate with parsed data
     billItems.value = [];
-    data.line_items.forEach(item => addItemRow(item.quantity, item.name, item.price.toFixed(2)));
+    data.line_items.forEach(item => addItemRow(item.name, item.quantity, item.price.toFixed(2)));
     if (data.total_amount) totalAmount.value = data.total_amount.toFixed(2);
   } catch (err) {
     uploadError.value = err.message;
