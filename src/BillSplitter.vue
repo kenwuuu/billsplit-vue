@@ -73,7 +73,7 @@
     <div class="bg-base-200 rounded-xl py-4 mb-6">
       <!-- Name input -->
       <div class="flex justify-center gap-4 mb-4">
-        <form autocomplete="off" @submit.prevent="handleAddPerson" class="w-auto">
+        <form autocomplete="off" @submit.prevent="handleAddPerson" class="flex gap-4 w-auto">
           <input
             type="text"
             v-model="newPersonName"
@@ -82,7 +82,7 @@
             class="input w-full"
             autocomplete="off"
           />
-          <button type="submit" style="display: none;">Add Person</button>
+          <button type="submit" class="btn btn-accent" @pointerdown.prevent>Add Person</button>
         </form>
       </div>
 
